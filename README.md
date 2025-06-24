@@ -5,4 +5,9 @@ Bu projede HTML CSS ve JS kullandım.
 
 Çalıştırmak için yapmanız gerek şey html dosyasını indirip varsayılan tarayıcınız ile açıp oynamak
 
+![Oyun Ekran Görüntüsü](game_screen.png)
+
+
+![Oyun Kaybetme Görüntüsü](gameover_screen.png)
+
 

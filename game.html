@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Flappy Bird Clone</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      background: url("https://wallpapercave.com/wp/wp6956942.png") no-repeat center center fixed;
+      background-size: cover;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #gameContainer {
+  position: relative;
+  width: 800px; 
+  height: 600px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+    #gameCanvas {
+      display: block;
+      background: transparent;
+    }
+
+    #score {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 32px;
+      color: white;
+      font-weight: bold;
+      text-shadow: 2px 2px 0px #000;
+      z-index: 2;
+    }
+
+    #gameOverScreen {
+      position: absolute;
+      top: 40%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: rgba(0,0,0,0.8);
+      padding: 20px 40px;
+      border-radius: 12px;
+      text-align: center;
+      display: none;
+      z-index: 3;
+    }
+
+    #gameOverScreen h1 {
+      color: white;
+      margin-bottom: 25px;
+    }
+
+    #restartBtn {
+      padding: 10px 20px;
+      font-size: 20px;
+      background-color: #ac8900;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    #restartBtn:hover {
+      background-color: #ebfc03;
+    }
+  </style>
+</head>
+<body style="display: flex; justify-content: center; align-items: center;">
+  <div id="gameContainer">
+    <div id="score">Skor: 0</div>
+    <canvas id="gameCanvas" width="400" height="600"></canvas>
+
+    <div id="gameOverScreen">
+      <h1>Game Over</h1>
+      <button id="restartBtn">Yeniden Başlat</button>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const birdImg = new Image();
+    birdImg.src = "https://static.wikia.nocookie.net/angrybirds/images/9/99/ChuckSVG.svg/revision/latest?cb=20250111153801";
+
+    const gravity = 0.5;
+    const jump = -10;
+    const pipeWidth = 60;
+    const gap = 180;
+    const pipeSpeed = 2;
+
+    let bird;
+    let pipes;
+    let score;
+    let isGameOver;
+
+    const gameOverScreen = document.getElementById("gameOverScreen");
+    const restartBtn = document.getElementById("restartBtn");
+
+    function resetGame() {
+      bird = {
+        x: 80,
+        y: 200,
+        radius: 15,
+        velocity: 0,
+        angle:0
+      };
+      pipes = [];
+      score = 0;
+      isGameOver = false;
+      gameOverScreen.style.display = "none";
+      document.getElementById("score").textContent = `Score: 0`;
+      requestAnimationFrame(update);
+    }
+
+    function createPipe() {
+      if (isGameOver) return;
+      const topHeight = Math.floor(Math.random() * (canvas.height - gap - 100)) + 20;
+      pipes.push({
+        x: canvas.width,
+        top: topHeight,
+        bottom: canvas.height - topHeight - gap
+      });
+    }
+    function drawBird() {
+        ctx.drawImage(birdImg, bird.x - 20, bird.y - 20, 40, 40);
+        ctx.save();
+        ctx.translate(bird.x, bird.y);
+        ctx.rotate(bird.angle);                  
+        ctx.drawImage(birdImg, -20, -20, 40, 40);
+        ctx.restore();
+    }
+    
+
+    function drawPipes() {
+      ctx.fillStyle = "#228B22";
+      pipes.forEach(pipe => {
+        ctx.fillRect(pipe.x, 0, pipeWidth, pipe.top);
+        ctx.fillRect(pipe.x, canvas.height - pipe.bottom, pipeWidth, pipe.bottom);
+      });
+    }
+
+    function drawScore() {
+      document.getElementById("score").textContent = `Skor: ${score}`;
+    }
+
+    function update() {
+      if (isGameOver) return;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      bird.velocity += gravity;
+      bird.y += bird.velocity;
+
+      if (bird.y + bird.radius > canvas.height || bird.y - bird.radius < 0) {
+        triggerGameOver();
+      }
+
+      if (bird.velocity < 0) {
+        bird.angle -= 0.05; 
+        if (bird.angle < -Math.PI / 10) bird.angle = -Math.PI / 10; 
+        } else {
+            bird.angle += 0.03; 
+            if (bird.angle > Math.PI / 10) bird.angle = Math.PI / 10; 
+        }
+
+      pipes.forEach((pipe, index) => {
+        pipe.x -= pipeSpeed;
+
+        if (pipe.x + pipeWidth === bird.x) {
+          score++;
+        }
+
+        if (
+          bird.x + bird.radius > pipe.x &&
+          bird.x - bird.radius < pipe.x + pipeWidth &&
+          (bird.y - bird.radius < pipe.top || bird.y + bird.radius > canvas.height - pipe.bottom)
+        ) {
+          triggerGameOver();
+        }
+
+        if (pipe.x + pipeWidth < 0) {
+          pipes.splice(index, 1);
+        }
+      });
+
+      drawBird();
+      drawPipes();
+      drawScore();
+
+      requestAnimationFrame(update);
+    }
+
+    function flap() {
+      if (isGameOver) return;
+      bird.velocity = jump;
+    }
+
+    function triggerGameOver() {
+      isGameOver = true;
+      gameOverScreen.style.display = "block";
+    }
+
+    window.addEventListener("keydown", (e) => {
+      if (e.code === "Space") flap();
+    });
+    window.addEventListener("mousedown", flap);
+    restartBtn.addEventListener("click", resetGame);
+
+    setInterval(createPipe, 1500);
+    resetGame();
+  </script>
+</body>
+</html>
